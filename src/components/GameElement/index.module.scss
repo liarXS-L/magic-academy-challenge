@@ -1,0 +1,48 @@
+@use '@/styles/variables.scss' as *;
+
+.element {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: $radius-md;
+  background: $color-bg-card-light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+  cursor: pointer;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: $radius-md;
+    background: linear-gradient(135deg, var(--element-color) 0%, rgba(var(--element-color), 0.3) 100%);
+    opacity: 0.2;
+    z-index: 0;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.emoji {
+  font-size: 36rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.selected {
+  box-shadow: 0 0 16rpx var(--element-color), 0 0 32rpx rgba(var(--element-color), 0.5);
+  transform: scale(1.1);
+  border: 2rpx solid var(--element-color);
+}
+
+.matched {
+  animation: matchPop 0.3s ease forwards;
+}
+
+.newElement {
+  animation: newElement 0.3s ease forwards;
+}

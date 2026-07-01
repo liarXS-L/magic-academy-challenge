@@ -1,0 +1,50 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-medium;
+  position: relative;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.title {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.score {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  background: linear-gradient(135deg, $color-star 0%, $color-warning 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.target {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  text-align: right;
+}
+
+.popup {
+  position: absolute;
+  top: -40rpx;
+  right: $spacing-lg;
+  animation: scoreFloat 0.8s ease forwards;
+}
+
+.popupText {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-success;
+}

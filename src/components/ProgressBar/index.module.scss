@@ -1,0 +1,39 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.track {
+  flex: 1;
+  background: $color-bg-card-light;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.fill {
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}
+
+.normal {
+  background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+}
+
+.warning {
+  background: linear-gradient(90deg, $color-warning 0%, darken($color-warning, 10%) 100%);
+}
+
+.danger {
+  background: linear-gradient(90deg, $color-error 0%, darken($color-error, 10%) 100%);
+  animation: pulse 1s ease infinite;
+}
+
+.label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  min-width: 120rpx;
+  text-align: right;
+}

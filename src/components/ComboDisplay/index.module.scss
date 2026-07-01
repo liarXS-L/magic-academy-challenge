@@ -1,0 +1,48 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.combo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: comboPop 0.6s ease forwards;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  background: rgba($color-bg-card, 0.9);
+  box-shadow: $shadow-popup;
+}
+
+.comboNumber {
+  font-size: 100rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+}
+
+.comboText {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-xs;
+}
+
+.colorYellow {
+  color: $color-warning;
+  text-shadow: 0 0 20rpx rgba($color-warning, 0.5);
+}
+
+.colorOrange {
+  color: $color-cta;
+  text-shadow: 0 0 20rpx rgba($color-cta, 0.5);
+}
+
+.colorGold {
+  color: $color-star;
+  text-shadow: 0 0 30rpx rgba($color-star, 0.7);
+}

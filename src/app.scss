@@ -1,0 +1,132 @@
+@use '@/styles/compat.scss';
+@use '@/styles/variables.scss' as *;
+
+page {
+  font-family: 'Nunito', 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: $font-size-md;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background-color: $color-bg-page;
+  min-height: 100vh;
+}
+
+.page-container {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding: $page-padding;
+  padding-bottom: 120rpx;
+}
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-medium;
+}
+
+.btn-primary {
+  @include button-reset;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-cta 0%, $color-cta-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-button;
+  box-shadow: $shadow-deep;
+  transition: all $transition-fast;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    background: $color-bg-card-light;
+    color: $color-text-tertiary;
+    box-shadow: none;
+  }
+}
+
+.btn-secondary {
+  @include button-reset;
+  height: $button-height-md;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  border: 2rpx solid $color-primary;
+  border-radius: $radius-button;
+  transition: all $transition-fast;
+
+  &:active {
+    background: rgba($color-primary, 0.1);
+  }
+}
+
+.btn-danger {
+  @include button-reset;
+  height: $button-height-md;
+  background: linear-gradient(135deg, $color-error 0%, darken($color-error, 10%) 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  border-radius: $radius-button;
+  box-shadow: $shadow-deep;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-effect {
+  box-shadow: $shadow-glow;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease forwards;
+}
+
+.animate-pop {
+  animation: pop 0.3s ease forwards;
+}
+
+.animate-bounce {
+  animation: bounce 1s ease infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease infinite;
+}
+
+.animate-shake {
+  animation: shake 0.3s ease forwards;
+}
+
+.animate-combo-pop {
+  animation: comboPop 0.6s ease forwards;
+}
+
+.animate-match-pop {
+  animation: matchPop 0.3s ease forwards;
+}
+
+.animate-new-element {
+  animation: newElement 0.3s ease forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-score-float {
+  animation: scoreFloat 0.8s ease forwards;
+}
