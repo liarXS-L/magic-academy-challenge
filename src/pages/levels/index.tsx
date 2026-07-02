@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { courses, characters } from '@/data/gameData';
 import { Course, Character, Level } from '@/types/game';
+import { validateCourseId, validateCharacterId } from '@/utils/validation';
 
 interface LevelParams {
   courseId: string;
@@ -18,27 +19,19 @@ export default function LevelsPage() {
     let courseId = '';
     let characterId = '';
     
-    try {
-      const instance = Taro.getCurrentInstance();
-      if (instance?.router?.params) {
-        courseId = instance.router.params.courseId || '';
-        characterId = instance.router.params.characterId || '';
-      }
-    } catch (e) {
-      console.error('Failed to get params from instance', e);
+    const instance = Taro.getCurrentInstance();
+    if (instance?.router?.params) {
+      courseId = instance.router.params.courseId || '';
+      characterId = instance.router.params.characterId || '';
     }
     
     if (!courseId || !characterId) {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        courseId = urlParams.get('courseId') || '';
-        characterId = urlParams.get('characterId') || '';
-      } catch (e) {
-        console.error('Failed to parse from URL', e);
-      }
+      const urlParams = new URLSearchParams(window.location.search);
+      courseId = urlParams.get('courseId') || '';
+      characterId = urlParams.get('characterId') || '';
     }
     
-    if (!courseId || !characterId) {
+    if (!validateCourseId(courseId) || !validateCharacterId(characterId)) {
       Taro.reLaunch({
         url: '/pages/index/index'
       });

@@ -3,6 +3,7 @@ import { View, Text, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { GameResult } from '@/types/game';
+import { safeParseGameResult } from '@/utils/validation';
 
 export default function ResultPage() {
   const [result, setResult] = useState<GameResult | null>(null);
@@ -10,26 +11,16 @@ export default function ResultPage() {
   useEffect(() => {
     let parsedResult: GameResult | null = null;
     
-    try {
-      const instance = Taro.getCurrentInstance();
-      if (instance?.router?.params?.params) {
-        parsedResult = JSON.parse(decodeURIComponent(instance.router.params.params));
-        console.log('Parsed from Taro instance:', parsedResult);
-      }
-    } catch (e) {
-      console.error('Failed to parse from Taro instance', e);
+    const instance = Taro.getCurrentInstance();
+    if (instance?.router?.params?.params) {
+      parsedResult = safeParseGameResult(instance.router.params.params);
     }
     
     if (!parsedResult) {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const paramsStr = urlParams.get('params');
-        if (paramsStr) {
-          parsedResult = JSON.parse(decodeURIComponent(paramsStr));
-          console.log('Parsed from URL:', parsedResult);
-        }
-      } catch (e) {
-        console.error('Failed to parse from URL', e);
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramsStr = urlParams.get('params');
+      if (paramsStr) {
+        parsedResult = safeParseGameResult(paramsStr);
       }
     }
     

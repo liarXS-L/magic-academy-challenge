@@ -20,6 +20,7 @@ import {
   triggerSpecialEffects
 } from '@/utils/gameLogic';
 import { GameElement as GameElementType, Course, Character, GameResult } from '@/types/game';
+import { validateCourseId, validateCharacterId, validateLevelId } from '@/utils/validation';
 
 interface GameParams {
   courseId: string;
@@ -64,34 +65,26 @@ export default function GamePage() {
     let characterId = '';
     let parsedLevelId = 1;
     
-    try {
-      const instance = Taro.getCurrentInstance();
-      if (instance?.router?.params) {
-        courseId = instance.router.params.courseId || '';
-        characterId = instance.router.params.characterId || '';
-        if (instance.router.params.levelId) {
-          parsedLevelId = parseInt(instance.router.params.levelId, 10) || 1;
-        }
-      }
-    } catch (e) {
-      console.error('Failed to get params from instance', e);
-    }
-    
-    if (!courseId || !characterId) {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        courseId = urlParams.get('courseId') || '';
-        characterId = urlParams.get('characterId') || '';
-        const levelIdStr = urlParams.get('levelId');
-        if (levelIdStr) {
-          parsedLevelId = parseInt(levelIdStr, 10) || 1;
-        }
-      } catch (e) {
-        console.error('Failed to parse from URL', e);
+    const instance = Taro.getCurrentInstance();
+    if (instance?.router?.params) {
+      courseId = instance.router.params.courseId || '';
+      characterId = instance.router.params.characterId || '';
+      if (instance.router.params.levelId) {
+        parsedLevelId = parseInt(instance.router.params.levelId, 10) || 1;
       }
     }
     
     if (!courseId || !characterId) {
+      const urlParams = new URLSearchParams(window.location.search);
+      courseId = urlParams.get('courseId') || '';
+      characterId = urlParams.get('characterId') || '';
+      const levelIdStr = urlParams.get('levelId');
+      if (levelIdStr) {
+        parsedLevelId = parseInt(levelIdStr, 10) || 1;
+      }
+    }
+    
+    if (!validateCourseId(courseId) || !validateCharacterId(characterId)) {
       Taro.reLaunch({
         url: '/pages/index/index'
       });
@@ -102,6 +95,10 @@ export default function GamePage() {
     const foundCharacter = characters.find(ch => ch.id === characterId);
     
     if (foundCourse && foundCharacter) {
+      if (!validateLevelId(courseId, parsedLevelId)) {
+        parsedLevelId = foundCourse.levels[0].id;
+      }
+      
       setCourse(foundCourse);
       setCharacter(foundCharacter);
       setLevelId(parsedLevelId);
