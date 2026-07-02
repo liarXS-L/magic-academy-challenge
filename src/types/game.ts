@@ -1,5 +1,7 @@
 export type ElementType = 'fire' | 'ice' | 'nature' | 'star' | 'rune' | 'summon' | 'time' | 'space';
 
+export type SpecialType = 'stripe-h' | 'stripe-v' | 'bomb' | 'rainbow' | null;
+
 export interface GameElement {
   id: string;
   type: ElementType;
@@ -8,6 +10,19 @@ export interface GameElement {
   isMatched: boolean;
   isNew: boolean;
   isSelected: boolean;
+  special: SpecialType;
+}
+
+export interface MatchCell {
+  row: number;
+  col: number;
+}
+
+export interface MatchGroup {
+  cells: MatchCell[];
+  direction: 'horizontal' | 'vertical';
+  length: number;
+  type: ElementType;
 }
 
 export interface Course {

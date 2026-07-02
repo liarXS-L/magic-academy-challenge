@@ -1,4 +1,4 @@
-import { GameElement, ElementType, MatchResult, Grade, GameResult } from '@/types/game';
+import { GameElement, ElementType, MatchResult, Grade, GameResult, MatchGroup, MatchCell } from '@/types/game';
 
 const BOARD_SIZE = 9;
 
@@ -38,7 +38,8 @@ export function initializeBoard(allowedTypes: ElementType[]): GameElement[][] {
         col,
         isMatched: false,
         isNew: false,
-        isSelected: false
+        isSelected: false,
+        special: null
       };
     }
   }
@@ -85,50 +86,238 @@ export function swapElements(
   return newBoard;
 }
 
-export function findMatches(board: GameElement[][]): { row: number; col: number }[] {
-  const matches: Set<string> = new Set();
+export function findMatchGroups(board: GameElement[][]): MatchGroup[] {
+  const groups: MatchGroup[] = [];
   
   for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE - 2; col++) {
+    let col = 0;
+    while (col < BOARD_SIZE) {
       const type = board[row][col].type;
-      if (
-        board[row][col + 1].type === type &&
-        board[row][col + 2].type === type
-      ) {
-        matches.add(`${row}-${col}`);
-        matches.add(`${row}-${col + 1}`);
-        matches.add(`${row}-${col + 2}`);
-        
-        let k = col + 3;
-        while (k < BOARD_SIZE && board[row][k].type === type) {
-          matches.add(`${row}-${k}`);
-          k++;
-        }
+      let length = 1;
+      
+      while (col + length < BOARD_SIZE && board[row][col + length].type === type) {
+        length++;
       }
+      
+      if (length >= 3) {
+        const cells: MatchCell[] = [];
+        for (let i = 0; i < length; i++) {
+          cells.push({ row, col: col + i });
+        }
+        groups.push({ cells, direction: 'horizontal', length, type });
+      }
+      
+      col += length;
     }
   }
   
   for (let col = 0; col < BOARD_SIZE; col++) {
-    for (let row = 0; row < BOARD_SIZE - 2; row++) {
+    let row = 0;
+    while (row < BOARD_SIZE) {
       const type = board[row][col].type;
-      if (
-        board[row + 1][col].type === type &&
-        board[row + 2][col].type === type
-      ) {
-        matches.add(`${row}-${col}`);
-        matches.add(`${row + 1}-${col}`);
-        matches.add(`${row + 2}-${col}`);
-        
-        let k = row + 3;
-        while (k < BOARD_SIZE && board[k][col].type === type) {
-          matches.add(`${k}-${col}`);
-          k++;
+      let length = 1;
+      
+      while (row + length < BOARD_SIZE && board[row + length][col].type === type) {
+        length++;
+      }
+      
+      if (length >= 3) {
+        const cells: MatchCell[] = [];
+        for (let i = 0; i < length; i++) {
+          cells.push({ row: row + i, col });
         }
+        groups.push({ cells, direction: 'vertical', length, type });
+      }
+      
+      row += length;
+    }
+  }
+  
+  return groups;
+}
+
+export function findMatches(board: GameElement[][]): { row: number; col: number }[] {
+  const groups = findMatchGroups(board);
+  const matches = new Set<string>();
+  
+  groups.forEach(group => {
+    group.cells.forEach(cell => {
+      matches.add(`${cell.row}-${cell.col}`);
+    });
+  });
+  
+  return Array.from(matches).map(key => {
+    const [row, col] = key.split('-').map(Number);
+    return { row, col };
+  });
+}
+
+interface MatchClassification {
+  normalMatches: { row: number; col: number }[];
+  stripeHPositions: { row: number; col: number }[];
+  stripeVPositions: { row: number; col: number }[];
+  bombPositions: { row: number; col: number }[];
+  rainbowPositions: { row: number; col: number }[];
+}
+
+export function classifyMatches(board: GameElement[][]): MatchClassification {
+  const groups = findMatchGroups(board);
+  const allMatches = new Set<string>();
+  const stripeHPositions: { row: number; col: number }[] = [];
+  const stripeVPositions: { row: number; col: number }[] = [];
+  const bombPositions: { row: number; col: number }[] = [];
+  const rainbowPositions: { row: number; col: number }[] = [];
+  
+  const hGroups = groups.filter(g => g.direction === 'horizontal');
+  const vGroups = groups.filter(g => g.direction === 'vertical');
+  
+  const cellToGroups: Record<string, MatchGroup[]> = {};
+  groups.forEach(group => {
+    group.cells.forEach(cell => {
+      const key = `${cell.row}-${cell.col}`;
+      if (!cellToGroups[key]) cellToGroups[key] = [];
+      cellToGroups[key].push(group);
+    });
+  });
+  
+  groups.forEach(group => {
+    if (group.length === 4) {
+      if (group.direction === 'horizontal') {
+        const centerCol = group.cells[1].col;
+        stripeHPositions.push({ row: group.cells[0].row, col: centerCol });
+      } else {
+        const centerRow = group.cells[1].row;
+        stripeVPositions.push({ row: centerRow, col: group.cells[0].col });
+      }
+    } else if (group.length >= 5) {
+      const centerIndex = Math.floor(group.length / 2);
+      rainbowPositions.push(group.cells[centerIndex]);
+    }
+    
+    group.cells.forEach(cell => {
+      allMatches.add(`${cell.row}-${cell.col}`);
+    });
+  });
+  
+  Object.keys(cellToGroups).forEach(key => {
+    const [row, col] = key.split('-').map(Number);
+    const cellGroups = cellToGroups[key];
+    
+    const hasH = cellGroups.some(g => g.direction === 'horizontal');
+    const hasV = cellGroups.some(g => g.direction === 'vertical');
+    
+    if (hasH && hasV) {
+      const hLength = cellGroups.find(g => g.direction === 'horizontal')?.length || 0;
+      const vLength = cellGroups.find(g => g.direction === 'vertical')?.length || 0;
+      
+      if (hLength >= 3 && vLength >= 3) {
+        bombPositions.push({ row, col });
+      }
+    }
+  });
+  
+  const normalMatches = Array.from(allMatches).map(key => {
+    const [row, col] = key.split('-').map(Number);
+    return { row, col };
+  });
+  
+  return {
+    normalMatches,
+    stripeHPositions,
+    stripeVPositions,
+    bombPositions,
+    rainbowPositions
+  };
+}
+
+export function getBombArea(centerRow: number, centerCol: number): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      const r = centerRow + dr;
+      const c = centerCol + dc;
+      if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+        area.push({ row: r, col: c });
       }
     }
   }
   
-  return Array.from(matches).map(key => {
+  return area;
+}
+
+export function getStripeHArea(row: number): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  for (let col = 0; col < BOARD_SIZE; col++) {
+    area.push({ row, col });
+  }
+  
+  return area;
+}
+
+export function getStripeVArea(col: number): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    area.push({ row, col });
+  }
+  
+  return area;
+}
+
+export function getRainbowArea(board: GameElement[][], targetType: ElementType): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      if (board[row][col].type === targetType) {
+        area.push({ row, col });
+      }
+    }
+  }
+  
+  return area;
+}
+
+export function triggerSpecialEffects(
+  board: GameElement[][],
+  matches: { row: number; col: number }[]
+): { row: number; col: number }[] {
+  const additionalMatches = new Set<string>();
+  
+  matches.forEach(({ row, col }) => {
+    const element = board[row][col];
+    
+    if (element.special === 'bomb') {
+      const bombArea = getBombArea(row, col);
+      bombArea.forEach(cell => {
+        additionalMatches.add(`${cell.row}-${cell.col}`);
+      });
+    } else if (element.special === 'stripe-h') {
+      const stripeArea = getStripeHArea(row);
+      stripeArea.forEach(cell => {
+        additionalMatches.add(`${cell.row}-${cell.col}`);
+      });
+    } else if (element.special === 'stripe-v') {
+      const stripeArea = getStripeVArea(col);
+      stripeArea.forEach(cell => {
+        additionalMatches.add(`${cell.row}-${cell.col}`);
+      });
+    } else if (element.special === 'rainbow') {
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          additionalMatches.add(`${r}-${c}`);
+        }
+      }
+    }
+  });
+  
+  matches.forEach(({ row, col }) => {
+    additionalMatches.delete(`${row}-${col}`);
+  });
+  
+  return Array.from(additionalMatches).map(key => {
     const [row, col] = key.split('-').map(Number);
     return { row, col };
   });
@@ -142,6 +331,35 @@ export function markMatches(
   
   matches.forEach(({ row, col }) => {
     newBoard[row][col].isMatched = true;
+  });
+  
+  return newBoard;
+}
+
+export function createSpecialElements(
+  board: GameElement[][],
+  classification: MatchClassification
+): GameElement[][] {
+  const newBoard = board.map(row => row.map(el => ({ ...el })));
+  
+  classification.stripeHPositions.forEach(({ row, col }) => {
+    newBoard[row][col].special = 'stripe-h';
+    newBoard[row][col].isMatched = false;
+  });
+  
+  classification.stripeVPositions.forEach(({ row, col }) => {
+    newBoard[row][col].special = 'stripe-v';
+    newBoard[row][col].isMatched = false;
+  });
+  
+  classification.bombPositions.forEach(({ row, col }) => {
+    newBoard[row][col].special = 'bomb';
+    newBoard[row][col].isMatched = false;
+  });
+  
+  classification.rainbowPositions.forEach(({ row, col }) => {
+    newBoard[row][col].special = 'rainbow';
+    newBoard[row][col].isMatched = false;
   });
   
   return newBoard;
@@ -186,7 +404,8 @@ export function fillEmptyCells(
           col,
           isMatched: false,
           isNew: true,
-          isSelected: false
+          isSelected: false,
+          special: null
         };
       }
     }

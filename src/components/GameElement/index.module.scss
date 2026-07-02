@@ -46,3 +46,64 @@
 .newElement {
   animation: newElement 0.3s ease forwards;
 }
+
+.specialIcon {
+  position: absolute;
+  font-size: 16rpx;
+  bottom: 2rpx;
+  right: 2rpx;
+  z-index: 2;
+}
+
+.stripe-h {
+  background: linear-gradient(90deg, #ffd700 0%, #ff8c00 100%);
+  animation: stripePulse 1s ease-in-out infinite;
+}
+
+.stripe-v {
+  background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
+  animation: stripePulse 1s ease-in-out infinite;
+}
+
+.bomb {
+  background: radial-gradient(circle, #8b0000 0%, #4a0000 100%);
+  animation: bombPulse 0.8s ease-in-out infinite;
+}
+
+.rainbow {
+  background: linear-gradient(45deg, red, orange, yellow, green, blue, purple, red);
+  background-size: 400% 400%;
+  animation: rainbowSpin 2s ease infinite;
+}
+
+@keyframes stripePulse {
+  0%, 100% {
+    box-shadow: 0 0 8rpx #ffd700;
+  }
+  50% {
+    box-shadow: 0 0 20rpx #ffd700, 0 0 30rpx #ff8c00;
+  }
+}
+
+@keyframes bombPulse {
+  0%, 100% {
+    box-shadow: 0 0 8rpx #ff0000;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20rpx #ff0000, 0 0 30rpx #8b0000;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes rainbowSpin {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

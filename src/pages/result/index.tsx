@@ -8,19 +8,16 @@ export default function ResultPage() {
   const [result, setResult] = useState<GameResult | null>(null);
 
   useEffect(() => {
-    const pages = Taro.getCurrentPages();
-    const currentPage = pages[pages.length - 1];
-    const options = (currentPage as any).options || {};
-    
     let parsedResult: GameResult | null = null;
     
-    if (options?.params) {
-      try {
-        parsedResult = JSON.parse(decodeURIComponent(options.params));
-        console.log('Parsed from Taro options:', parsedResult);
-      } catch (e) {
-        console.error('Failed to parse from Taro options', e);
+    try {
+      const instance = Taro.getCurrentInstance();
+      if (instance?.router?.params?.params) {
+        parsedResult = JSON.parse(decodeURIComponent(instance.router.params.params));
+        console.log('Parsed from Taro instance:', parsedResult);
       }
+    } catch (e) {
+      console.error('Failed to parse from Taro instance', e);
     }
     
     if (!parsedResult) {
@@ -38,12 +35,12 @@ export default function ResultPage() {
     
     if (!parsedResult) {
       parsedResult = {
-        score: 10000,
-        targetScore: 10000,
-        grade: 'B',
-        isWin: true,
-        timeUsed: 45,
-        maxCombo: 5,
+        score: 0,
+        targetScore: 5000,
+        grade: 'D',
+        isWin: false,
+        timeUsed: 0,
+        maxCombo: 0,
         courseId: 'fire-ice',
         characterId: 'fire-wizard'
       };
@@ -55,20 +52,21 @@ export default function ResultPage() {
   const handleContinue = () => {
     if (!result) return;
     
-    const params = JSON.stringify({
-      courseId: result.courseId,
-      characterId: result.characterId,
-      levelId: 1
-    });
-
-    Taro.redirectTo({
-      url: `/pages/game/index?params=${encodeURIComponent(params)}`
+    Taro.reLaunch({
+      url: `/pages/levels/index?courseId=${result.courseId}&characterId=${result.characterId}`
     });
   };
 
   const handleBack = () => {
+    if (!result) {
+      Taro.reLaunch({
+        url: '/pages/index/index'
+      });
+      return;
+    }
+    
     Taro.reLaunch({
-      url: '/pages/index/index'
+      url: `/pages/levels/index?courseId=${result.courseId}&characterId=${result.characterId}`
     });
   };
 
@@ -164,7 +162,7 @@ export default function ResultPage() {
           </Button>
         )}
         <Button className={`${styles.button} ${styles.secondary}`} onClick={handleBack}>
-          返回首页
+          返回关卡选择
         </Button>
       </View>
     </View>

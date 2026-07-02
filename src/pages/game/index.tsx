@@ -14,7 +14,10 @@ import {
   dropElements,
   fillEmptyCells,
   calculateScore,
-  createGameResult
+  createGameResult,
+  classifyMatches,
+  createSpecialElements,
+  triggerSpecialEffects
 } from '@/utils/gameLogic';
 import { GameElement as GameElementType, Course, Character, GameResult } from '@/types/game';
 
@@ -34,62 +37,76 @@ export default function GamePage() {
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [selectedElement, setSelectedElement] = useState<{ row: number; col: number } | null>(null);
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(0);
   
   const [course, setCourse] = useState<Course | null>(null);
   const [character, setCharacter] = useState<Character | null>(null);
   const [targetScore, setTargetScore] = useState(5000);
+  const [isTargetReached, setIsTargetReached] = useState(false);
+  const [levelId, setLevelId] = useState(1);
   
   const timerRef = useRef<number | null>(null);
+  const countdownRef = useRef<number | null>(null);
   const isProcessingRef = useRef(false);
+  
+  const gameStateRef = useRef({
+    score: 0,
+    targetScore: 5000,
+    timeLeft: 60,
+    maxCombo: 0,
+    course: null as Course | null,
+    character: null as Character | null,
+    levelId: 1
+  });
 
   useEffect(() => {
-    const pages = Taro.getCurrentPages();
-    const currentPage = pages[pages.length - 1];
-    const options = (currentPage as any).options || {};
+    let courseId = '';
+    let characterId = '';
+    let parsedLevelId = 1;
     
-    console.log('GamePage options:', options);
-    
-    let params: GameParams | null = null;
-    
-    if (options?.params) {
-      try {
-        params = JSON.parse(decodeURIComponent(options.params));
-        console.log('Parsed params:', params);
-      } catch (e) {
-        console.error('Failed to parse game params', e);
+    try {
+      const instance = Taro.getCurrentInstance();
+      if (instance?.router?.params) {
+        courseId = instance.router.params.courseId || '';
+        characterId = instance.router.params.characterId || '';
+        if (instance.router.params.levelId) {
+          parsedLevelId = parseInt(instance.router.params.levelId, 10) || 1;
+        }
       }
+    } catch (e) {
+      console.error('Failed to get params from instance', e);
     }
     
-    if (!params) {
+    if (!courseId || !characterId) {
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const paramsStr = urlParams.get('params');
-        if (paramsStr) {
-          params = JSON.parse(decodeURIComponent(paramsStr));
-          console.log('Parsed from URL:', params);
+        courseId = urlParams.get('courseId') || '';
+        characterId = urlParams.get('characterId') || '';
+        const levelIdStr = urlParams.get('levelId');
+        if (levelIdStr) {
+          parsedLevelId = parseInt(levelIdStr, 10) || 1;
         }
       } catch (e) {
         console.error('Failed to parse from URL', e);
       }
     }
     
-    if (!params) {
-      params = {
-        courseId: 'fire-ice',
-        characterId: 'fire-wizard',
-        levelId: 1
-      };
+    if (!courseId || !characterId) {
+      Taro.reLaunch({
+        url: '/pages/index/index'
+      });
+      return;
     }
     
-    const foundCourse = courses.find(c => c.id === params.courseId);
-    const foundCharacter = characters.find(ch => ch.id === params.characterId);
+    const foundCourse = courses.find(c => c.id === courseId);
+    const foundCharacter = characters.find(ch => ch.id === characterId);
     
     if (foundCourse && foundCharacter) {
       setCourse(foundCourse);
       setCharacter(foundCharacter);
+      setLevelId(parsedLevelId);
       
-      const level = foundCourse.levels.find(l => l.id === params.levelId) || foundCourse.levels[0];
+      const level = foundCourse.levels.find(l => l.id === parsedLevelId) || foundCourse.levels[0];
       setTargetScore(level.targetScore);
       setTimeLeft(level.timeLimit);
       
@@ -99,11 +116,24 @@ export default function GamePage() {
       const defaultCharacter = characters[0];
       setCourse(defaultCourse);
       setCharacter(defaultCharacter);
+      setLevelId(1);
       setTargetScore(defaultCourse.levels[0].targetScore);
       setTimeLeft(defaultCourse.levels[0].timeLimit);
       setBoard(initializeBoard(defaultCourse.elementTypes));
     }
   }, []);
+
+  useEffect(() => {
+    gameStateRef.current = {
+      score,
+      targetScore,
+      timeLeft,
+      maxCombo,
+      course,
+      character,
+      levelId
+    };
+  }, [score, targetScore, timeLeft, maxCombo, course, character, levelId]);
 
   const handleBack = () => {
     Taro.showModal({
@@ -111,9 +141,19 @@ export default function GamePage() {
       content: '退出后当前游戏进度将丢失',
       success: (res) => {
         if (res.confirm) {
-          Taro.reLaunch({
-            url: '/pages/index/index'
-          });
+          if (course && character) {
+            const params = JSON.stringify({
+              courseId: course.id,
+              characterId: character.id
+            });
+            Taro.reLaunch({
+              url: `/pages/levels/index?params=${encodeURIComponent(params)}`
+            });
+          } else {
+            Taro.reLaunch({
+              url: '/pages/index/index'
+            });
+          }
         }
       }
     });
@@ -127,6 +167,13 @@ export default function GamePage() {
         timerRef.current = null;
       }
     }
+    if (phase === 'countdown') {
+      setPhase('paused');
+      if (countdownRef.current) {
+        clearTimeout(countdownRef.current);
+        countdownRef.current = null;
+      }
+    }
   };
 
   const handleResume = () => {
@@ -134,6 +181,7 @@ export default function GamePage() {
   };
 
   const startGame = () => {
+    console.log('startGame called, setting phase to countdown');
     setPhase('countdown');
     setCountdown(3);
   };
@@ -141,8 +189,13 @@ export default function GamePage() {
   useEffect(() => {
     if (phase === 'countdown') {
       if (countdown > 0) {
-        const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-        return () => clearTimeout(timer);
+        countdownRef.current = setTimeout(() => setCountdown(countdown - 1), 1000) as unknown as number;
+        return () => {
+          if (countdownRef.current) {
+            clearTimeout(countdownRef.current);
+            countdownRef.current = null;
+          }
+        };
       } else {
         setPhase('playing');
       }
@@ -171,37 +224,51 @@ export default function GamePage() {
   }, [phase]);
 
   useEffect(() => {
-    if (score >= targetScore && phase === 'playing' && score > 0) {
-      endGame();
+    if (score >= targetScore && phase === 'playing' && score > 0 && !isTargetReached) {
+      setIsTargetReached(true);
+      Taro.showToast({
+        title: '目标达成！继续挑战更高分！',
+        icon: 'success',
+        duration: 2000
+      });
     }
-  }, [score, targetScore, phase]);
+  }, [score, targetScore, phase, isTargetReached]);
 
   const endGame = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (countdownRef.current) {
+      clearTimeout(countdownRef.current);
+      countdownRef.current = null;
+    }
 
-    if (course && character) {
+    const state = gameStateRef.current;
+    if (state.course && state.character) {
       const result: GameResult = createGameResult(
-        score,
-        targetScore,
-        (course.levels[0]?.timeLimit || 60) - timeLeft,
-        maxCombo,
-        course.id,
-        character.id
+        state.score,
+        state.targetScore,
+        (state.course.levels.find(l => l.id === state.levelId)?.timeLimit || state.course.levels[0]?.timeLimit || 60) - state.timeLeft,
+        state.maxCombo,
+        state.course.id,
+        state.character.id
       );
 
-      Taro.redirectTo({
+      Taro.reLaunch({
         url: `/pages/result/index?params=${encodeURIComponent(JSON.stringify(result))}`
       });
     }
-  }, [score, targetScore, timeLeft, maxCombo, course, character]);
+  }, []);
 
   const processMatches = useCallback(async (currentBoard: GameElementType[][], currentCombo: number) => {
-    const matches = findMatches(currentBoard);
-    
-    if (matches.length === 0) {
+    const classification = classifyMatches(currentBoard);
+    let allMatches = [...classification.normalMatches];
+
+    const specialEffects = triggerSpecialEffects(currentBoard, classification.normalMatches);
+    allMatches = [...new Set([...allMatches, ...specialEffects])];
+
+    if (allMatches.length === 0) {
       setCombo(0);
       isProcessingRef.current = false;
       return;
@@ -211,7 +278,8 @@ export default function GamePage() {
     setCombo(newCombo);
     setMaxCombo(prev => Math.max(prev, newCombo));
 
-    const markedBoard = markMatches(currentBoard, matches);
+    let markedBoard = markMatches(currentBoard, allMatches);
+    markedBoard = createSpecialElements(markedBoard, classification);
     setBoard(markedBoard);
 
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -221,19 +289,21 @@ export default function GamePage() {
       return;
     }
 
-    const matchedTypes = [...new Set(matches.map(({ row, col }) => markedBoard[row][col].type))];
-    let totalScore = 0;
+    let baseScore = allMatches.length * 10;
     
-    matchedTypes.forEach(type => {
-      const typeMatches = matches.filter(({ row, col }) => markedBoard[row][col].type === type);
-      totalScore += calculateScore(
-        typeMatches.length,
-        newCombo,
-        character?.specialty || null,
-        type,
-        character?.bonus || 0
-      );
-    });
+    let comboMultiplier = 1;
+    if (newCombo >= 3) comboMultiplier = 1.5;
+    if (newCombo >= 5) comboMultiplier = 2;
+    
+    let elementBonus = 1;
+    if (character?.specialty) {
+      const hasSpecialty = allMatches.some(({ row, col }) => markedBoard[row][col].type === character.specialty);
+      if (hasSpecialty) {
+        elementBonus = 1 + character.bonus;
+      }
+    }
+    
+    const totalScore = Math.floor(baseScore * comboMultiplier * elementBonus);
 
     setScore(prev => prev + totalScore);
 
@@ -280,8 +350,6 @@ export default function GamePage() {
     }
 
     if (course) {
-      const allowedTypes = [course.elementType1, course.elementType2];
-      
       if (!isValidMove(board, prevRow, prevCol, row, col)) {
         const newBoard = board.map(r => r.map(el => ({ ...el, isSelected: false })));
         newBoard[row][col].isSelected = true;
@@ -336,7 +404,7 @@ export default function GamePage() {
       <View className={styles.timeBar}>
         <View
           className={`${styles.timeFill} ${getTimeBarClass()}`}
-          style={{ width: `${(timeLeft / (course.levels[0]?.timeLimit || 60)) * 100}%` }}
+          style={{ width: `${(timeLeft / (course?.levels[0]?.timeLimit || 60)) * 100}%` }}
         />
       </View>
 
@@ -365,7 +433,13 @@ export default function GamePage() {
           <View className={styles.overlayContent}>
             <Text className={styles.overlayTitle}>准备挑战</Text>
             <Text className={styles.overlayDesc}>
-              课程: {course.name}\n目标得分: {targetScore}\n时间: {course.levels[0]?.timeLimit || 60}秒
+              课程: {course.name}
+            </Text>
+            <Text className={styles.overlayDesc}>
+              目标得分: {targetScore}
+            </Text>
+            <Text className={styles.overlayDesc}>
+              时间: {timeLeft}秒
             </Text>
             <View className={styles.overlayButtons}>
               <Button className={`${styles.overlayButton} ${styles.primary}`} onClick={startGame}>

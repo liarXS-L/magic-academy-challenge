@@ -40,14 +40,16 @@ export default function IndexPage() {
       return;
     }
 
-    const params = JSON.stringify({
-      courseId: selectedCourse.id,
-      characterId: selectedCharacter.id,
-      levelId: selectedCourse.levels.find(l => !l.isCompleted)?.id || 1
-    });
-
-    Taro.navigateTo({
-      url: `/pages/game/index?params=${encodeURIComponent(params)}`
+    if (selectedCourse.isLocked || selectedCharacter.isLocked) {
+      Taro.showToast({
+        title: '所选课程或角色未解锁',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    Taro.reLaunch({
+      url: `/pages/levels/index?courseId=${selectedCourse.id}&characterId=${selectedCharacter.id}`
     });
   };
 
