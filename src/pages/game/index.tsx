@@ -17,7 +17,8 @@ import {
   createGameResult,
   classifyMatches,
   createSpecialElements,
-  triggerSpecialEffects
+  triggerSpecialEffects,
+  activateSkill
 } from '@/utils/gameLogic';
 import { GameElement as GameElementType, Course, Character, GameResult } from '@/types/game';
 import { validateCourseId, validateCharacterId, validateLevelId } from '@/utils/validation';
@@ -46,6 +47,10 @@ export default function GamePage() {
   const [isTargetReached, setIsTargetReached] = useState(false);
   const [levelId, setLevelId] = useState(1);
   
+  const [energy, setEnergy] = useState(0);
+  const [isSkillActive, setIsSkillActive] = useState(false);
+  const [skillActiveCount, setSkillActiveCount] = useState(0);
+  
   const timerRef = useRef<number | null>(null);
   const countdownRef = useRef<number | null>(null);
   const isProcessingRef = useRef(false);
@@ -57,7 +62,8 @@ export default function GamePage() {
     maxCombo: 0,
     course: null as Course | null,
     character: null as Character | null,
-    levelId: 1
+    levelId: 1,
+    energy: 0
   });
 
   useEffect(() => {
@@ -128,9 +134,10 @@ export default function GamePage() {
       maxCombo,
       course,
       character,
-      levelId
+      levelId,
+      energy
     };
-  }, [score, targetScore, timeLeft, maxCombo, course, character, levelId]);
+  }, [score, targetScore, timeLeft, maxCombo, course, character, levelId, energy]);
 
   const handleBack = () => {
     Taro.showModal({
@@ -176,6 +183,62 @@ export default function GamePage() {
   const handleResume = () => {
     setPhase('playing');
   };
+
+  const releaseSkill = useCallback(() => {
+    if (!character || !character.skill || energy < character.skill.energyCost || phase !== 'playing') {
+      return;
+    }
+
+    setEnergy(prev => prev - character.skill.energyCost);
+    
+    const newBoard = activateSkill(board, character.skill.id);
+    setBoard(newBoard);
+    
+    setIsSkillActive(true);
+    
+    if (character.skill.id === 'ice-shield') {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      setTimeout(() => {
+        if (phase === 'playing') {
+          timerRef.current = setInterval(() => {
+            setTimeLeft(prev => {
+              if (prev <= 1) {
+                endGame();
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000) as unknown as number;
+        }
+        setIsSkillActive(false);
+      }, (character.skill.duration || 3) * 1000);
+    } else if (character.skill.id === 'rune-blessing') {
+      setSkillActiveCount(character.skill.duration || 3);
+      setTimeout(() => {
+        setIsSkillActive(false);
+      }, 10000);
+    } else if (character.skill.id === 'flame-storm' || character.skill.id === 'nature-growth') {
+      isProcessingRef.current = true;
+      setTimeout(() => {
+        processMatches(newBoard, 0);
+        setIsSkillActive(false);
+      }, 300);
+    } else {
+      setTimeout(() => {
+        setIsSkillActive(false);
+      }, 2000);
+    }
+    
+    Taro.showToast({
+      title: `${character.skill.emoji} ${character.skill.name}`,
+      icon: 'none',
+      duration: 2000
+    });
+  }, [board, character, energy, phase, endGame, processMatches]);
 
   const startGame = () => {
     console.log('startGame called, setting phase to countdown');
@@ -231,6 +294,12 @@ export default function GamePage() {
     }
   }, [score, targetScore, phase, isTargetReached]);
 
+  useEffect(() => {
+    if (character && character.skill && energy >= character.skill.energyCost && phase === 'playing') {
+      releaseSkill();
+    }
+  }, [energy, character, phase, releaseSkill]);
+
   const endGame = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -251,6 +320,45 @@ export default function GamePage() {
         state.course.id,
         state.character.id
       );
+
+      if (result.isWin) {
+        try {
+          let savedProgress = '';
+          try {
+            savedProgress = Taro.getStorageSync('gameProgress');
+          } catch (e) {
+            savedProgress = localStorage.getItem('gameProgress') || '';
+          }
+          
+          const progress = savedProgress ? JSON.parse(savedProgress) : {};
+          
+          if (!progress[state.course.id]) {
+            progress[state.course.id] = {};
+          }
+          
+          const gradeOrder = ['S', 'A', 'B', 'C', 'D'];
+          const currentLevel = progress[state.course.id][state.levelId];
+          const shouldUpdate = !currentLevel || !currentLevel.isCompleted || 
+            (result.grade && (!currentLevel.bestGrade || 
+              gradeOrder.indexOf(result.grade) < gradeOrder.indexOf(currentLevel.bestGrade)));
+          
+          if (shouldUpdate) {
+            progress[state.course.id][state.levelId] = {
+              isCompleted: true,
+              bestGrade: result.grade
+            };
+          }
+          
+          const progressStr = JSON.stringify(progress);
+          try {
+            Taro.setStorageSync('gameProgress', progressStr);
+          } catch (e) {
+            localStorage.setItem('gameProgress', progressStr);
+          }
+        } catch (e) {
+          console.error('Failed to save progress:', e);
+        }
+      }
 
       Taro.reLaunch({
         url: `/pages/result/index?params=${encodeURIComponent(JSON.stringify(result))}`
@@ -299,10 +407,22 @@ export default function GamePage() {
         elementBonus = 1 + character.bonus;
       }
     }
+
+    let skillMultiplier = 1;
+    if (skillActiveCount > 0 && character?.skill.id === 'rune-blessing') {
+      skillMultiplier = 2;
+      setSkillActiveCount(prev => prev - 1);
+    }
     
-    const totalScore = Math.floor(baseScore * comboMultiplier * elementBonus);
+    const totalScore = Math.floor(baseScore * comboMultiplier * elementBonus * skillMultiplier);
 
     setScore(prev => prev + totalScore);
+
+    const energyGain = allMatches.length * 2;
+    setEnergy(prev => {
+      const newEnergy = Math.min(prev + energyGain, character?.skill?.energyCost || 100);
+      return newEnergy;
+    });
 
     const droppedBoard = dropElements(markedBoard);
     setBoard(droppedBoard);
@@ -320,7 +440,7 @@ export default function GamePage() {
     setTimeout(() => {
       processMatches(clearedBoard, newCombo);
     }, 100);
-  }, [character, course]);
+  }, [character, course, skillActiveCount]);
 
   const handleElementClick = useCallback((row: number, col: number) => {
     if (phase !== 'playing' || isProcessingRef.current) return;
@@ -421,6 +541,31 @@ export default function GamePage() {
           />
         </View>
         <Text className={styles.scoreTarget}>目标: {targetScore.toLocaleString()}</Text>
+      </View>
+
+      <View className={styles.skillPanel}>
+        <View className={styles.skillHeader}>
+          <Text className={styles.skillName}>
+            <Text className={styles.skillEmoji}>{character?.skill?.emoji}</Text>
+            <Text>{character?.skill?.name}</Text>
+          </Text>
+          <Button 
+            className={`${styles.skillButton} ${energy >= (character?.skill?.energyCost || 100) ? styles.skillButtonReady : styles.skillButtonNotReady}`}
+            onClick={releaseSkill}
+            disabled={energy < (character?.skill?.energyCost || 100)}
+          >
+            {energy >= (character?.skill?.energyCost || 100) ? '释放' : '蓄力中'}
+          </Button>
+        </View>
+        <View className={styles.skillEnergyBar}>
+          <View
+            className={`${styles.skillEnergyFill} ${energy >= (character?.skill?.energyCost || 100) ? styles.ready : ''}`}
+            style={{ width: `${(energy / (character?.skill?.energyCost || 100)) * 100}%` }}
+          />
+        </View>
+        <Text className={styles.skillEnergyText}>
+          {character?.skill?.description}
+        </Text>
       </View>
 
       <ComboDisplay combo={combo} />

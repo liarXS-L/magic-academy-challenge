@@ -11,9 +11,11 @@ export default function IndexPage() {
 
   const handleCourseClick = (course: Course) => {
     if (course.isLocked) {
-      Taro.showToast({
-        title: '课程未解锁',
-        icon: 'none'
+      Taro.showModal({
+        title: '🔒 课程未解锁',
+        content: `${course.name}\n\n${course.unlockCondition || '完成前置课程以解锁'}`,
+        confirmText: '知道了',
+        showCancel: false
       });
       return;
     }
@@ -22,9 +24,11 @@ export default function IndexPage() {
 
   const handleCharacterClick = (character: Character) => {
     if (character.isLocked) {
-      Taro.showToast({
-        title: '角色未解锁',
-        icon: 'none'
+      Taro.showModal({
+        title: '🔒 角色未解锁',
+        content: `${character.emoji} ${character.name}\n\n${character.unlockCondition || '完成特定条件以解锁'}`,
+        confirmText: '知道了',
+        showCancel: false
       });
       return;
     }

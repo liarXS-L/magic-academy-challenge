@@ -12,10 +12,10 @@ export const courses: Course[] = [
     isLocked: false,
     progress: 75,
     levels: [
-      { id: 1, targetScore: 5000, timeLimit: 60, isCompleted: true, bestGrade: 'S' },
-      { id: 2, targetScore: 7000, timeLimit: 55, isCompleted: true, bestGrade: 'A' },
-      { id: 3, targetScore: 10000, timeLimit: 55, isCompleted: true, bestGrade: 'B' },
-      { id: 4, targetScore: 12000, timeLimit: 50, isCompleted: false, bestGrade: null }
+      { id: 1, targetScore: 5000, timeLimit: 70, isCompleted: true, bestGrade: 'S' },
+      { id: 2, targetScore: 7000, timeLimit: 65, isCompleted: true, bestGrade: 'A' },
+      { id: 3, targetScore: 10000, timeLimit: 65, isCompleted: true, bestGrade: 'B' },
+      { id: 4, targetScore: 12000, timeLimit: 60, isCompleted: false, bestGrade: null }
     ]
   },
   {
@@ -29,10 +29,10 @@ export const courses: Course[] = [
     isLocked: false,
     progress: 50,
     levels: [
-      { id: 1, targetScore: 5000, timeLimit: 60, isCompleted: true, bestGrade: 'A' },
-      { id: 2, targetScore: 7000, timeLimit: 55, isCompleted: true, bestGrade: 'B' },
-      { id: 3, targetScore: 10000, timeLimit: 55, isCompleted: false, bestGrade: null },
-      { id: 4, targetScore: 12000, timeLimit: 50, isCompleted: false, bestGrade: null }
+      { id: 1, targetScore: 5000, timeLimit: 70, isCompleted: true, bestGrade: 'A' },
+      { id: 2, targetScore: 7000, timeLimit: 65, isCompleted: true, bestGrade: 'B' },
+      { id: 3, targetScore: 10000, timeLimit: 65, isCompleted: false, bestGrade: null },
+      { id: 4, targetScore: 12000, timeLimit: 60, isCompleted: false, bestGrade: null }
     ]
   },
   {
@@ -46,10 +46,10 @@ export const courses: Course[] = [
     isLocked: false,
     progress: 25,
     levels: [
-      { id: 1, targetScore: 5000, timeLimit: 60, isCompleted: true, bestGrade: 'B' },
-      { id: 2, targetScore: 7000, timeLimit: 55, isCompleted: false, bestGrade: null },
-      { id: 3, targetScore: 10000, timeLimit: 55, isCompleted: false, bestGrade: null },
-      { id: 4, targetScore: 12000, timeLimit: 50, isCompleted: false, bestGrade: null }
+      { id: 1, targetScore: 5000, timeLimit: 70, isCompleted: true, bestGrade: 'B' },
+      { id: 2, targetScore: 7000, timeLimit: 65, isCompleted: false, bestGrade: null },
+      { id: 3, targetScore: 10000, timeLimit: 65, isCompleted: false, bestGrade: null },
+      { id: 4, targetScore: 12000, timeLimit: 60, isCompleted: false, bestGrade: null }
     ]
   },
   {
@@ -62,11 +62,12 @@ export const courses: Course[] = [
     color: '#6366F1',
     isLocked: true,
     progress: 0,
+    unlockCondition: '完成前三个课程的所有关卡',
     levels: [
-      { id: 1, targetScore: 8000, timeLimit: 55, isCompleted: false, bestGrade: null },
-      { id: 2, targetScore: 10000, timeLimit: 50, isCompleted: false, bestGrade: null },
-      { id: 3, targetScore: 13000, timeLimit: 50, isCompleted: false, bestGrade: null },
-      { id: 4, targetScore: 15000, timeLimit: 45, isCompleted: false, bestGrade: null }
+      { id: 1, targetScore: 8000, timeLimit: 70, isCompleted: false, bestGrade: null },
+      { id: 2, targetScore: 10000, timeLimit: 65, isCompleted: false, bestGrade: null },
+      { id: 3, targetScore: 13000, timeLimit: 65, isCompleted: false, bestGrade: null },
+      { id: 4, targetScore: 15000, timeLimit: 60, isCompleted: false, bestGrade: null }
     ]
   }
 ];
@@ -79,7 +80,14 @@ export const characters: Character[] = [
     specialty: 'fire',
     bonus: 0.2,
     isLocked: false,
-    color: '#EF4444'
+    color: '#EF4444',
+    skill: {
+      id: 'flame-storm',
+      name: '火焰风暴',
+      description: '火焰席卷棋盘，随机消除15个元素',
+      emoji: '🌪️',
+      energyCost: 500
+    }
   },
   {
     id: 'ice-mage',
@@ -88,7 +96,15 @@ export const characters: Character[] = [
     specialty: 'ice',
     bonus: 0.2,
     isLocked: false,
-    color: '#3B82F6'
+    color: '#3B82F6',
+    skill: {
+      id: 'ice-shield',
+      name: '冰霜护盾',
+      description: '冻结时间3秒，获得额外思考时间',
+      emoji: '🛡️',
+      energyCost: 500,
+      duration: 3
+    }
   },
   {
     id: 'nature-druid',
@@ -97,7 +113,14 @@ export const characters: Character[] = [
     specialty: 'nature',
     bonus: 0.2,
     isLocked: false,
-    color: '#22C55E'
+    color: '#22C55E',
+    skill: {
+      id: 'nature-growth',
+      name: '自然生长',
+      description: '自然之力席卷，消除所有偶数行元素',
+      emoji: '🌳',
+      energyCost: 500
+    }
   },
   {
     id: 'rune-scholar',
@@ -106,7 +129,16 @@ export const characters: Character[] = [
     specialty: 'rune',
     bonus: 0.2,
     isLocked: true,
-    color: '#8B5CF6'
+    color: '#8B5CF6',
+    skill: {
+      id: 'rune-blessing',
+      name: '符文祝福',
+      description: '接下来3次消除的得分翻倍',
+      emoji: '✨',
+      energyCost: 500,
+      duration: 3
+    },
+    unlockCondition: '在符文与召唤课程中获得S级评价'
   }
 ];
 

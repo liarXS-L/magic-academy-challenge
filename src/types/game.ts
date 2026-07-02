@@ -2,6 +2,17 @@ export type ElementType = 'fire' | 'ice' | 'nature' | 'star' | 'rune' | 'summon'
 
 export type SpecialType = 'stripe-h' | 'stripe-v' | 'bomb' | 'rainbow' | null;
 
+export type SkillType = 'flame-storm' | 'ice-shield' | 'nature-growth' | 'rune-blessing';
+
+export interface Skill {
+  id: SkillType;
+  name: string;
+  description: string;
+  emoji: string;
+  energyCost: number;
+  duration?: number;
+}
+
 export interface GameElement {
   id: string;
   type: ElementType;
@@ -36,6 +47,7 @@ export interface Course {
   isLocked: boolean;
   progress: number;
   levels: Level[];
+  unlockCondition?: string;
 }
 
 export interface Level {
@@ -56,6 +68,8 @@ export interface Character {
   bonus: number;
   isLocked: boolean;
   color: string;
+  skill: Skill;
+  unlockCondition?: string;
 }
 
 export interface GameState {

@@ -1,4 +1,4 @@
-import { GameElement, ElementType, MatchResult, Grade, GameResult, MatchGroup, MatchCell } from '@/types/game';
+import { GameElement, ElementType, MatchResult, Grade, GameResult, MatchGroup, MatchCell, SkillType } from '@/types/game';
 
 const BOARD_SIZE = 9;
 
@@ -468,4 +468,58 @@ export function createGameResult(
     courseId,
     characterId
   };
+}
+
+export function activateSkill(
+  board: GameElement[][],
+  skillType: SkillType
+): GameElement[][] {
+  const newBoard = board.map(row => row.map(el => ({ ...el })));
+  
+  switch (skillType) {
+    case 'flame-storm':
+      return activateFlameStorm(newBoard);
+    case 'ice-shield':
+      return newBoard;
+    case 'nature-growth':
+      return activateNatureGrowth(newBoard);
+    case 'rune-blessing':
+      return newBoard;
+    default:
+      return newBoard;
+  }
+}
+
+function activateFlameStorm(board: GameElement[][]): GameElement[][] {
+  const positions: { row: number; col: number }[] = [];
+  const used = new Set<string>();
+  
+  while (positions.length < 15) {
+    const row = Math.floor(Math.random() * BOARD_SIZE);
+    const col = Math.floor(Math.random() * BOARD_SIZE);
+    const key = `${row}-${col}`;
+    
+    if (!used.has(key)) {
+      used.add(key);
+      positions.push({ row, col });
+    }
+  }
+  
+  positions.forEach(({ row, col }) => {
+    board[row][col].isMatched = true;
+  });
+  
+  return board;
+}
+
+function activateNatureGrowth(board: GameElement[][]): GameElement[][] {
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    if (row % 2 === 0) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        board[row][col].isMatched = true;
+      }
+    }
+  }
+  
+  return board;
 }

@@ -209,3 +209,79 @@
   color: $color-primary;
   animation: pop 0.3s ease;
 }
+
+.skillPanel {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-medium;
+  margin-bottom: $spacing-lg;
+}
+
+.skillHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.skillName {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.skillEmoji {
+  font-size: $font-size-lg;
+}
+
+.skillButton {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-fast;
+}
+
+.skillButtonReady {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.skillButtonNotReady {
+  background: $color-bg-card-light;
+  color: $color-text-tertiary;
+}
+
+.skillEnergyBar {
+  height: 16rpx;
+  background: $color-bg-card-light;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.skillEnergyFill {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+  background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+  
+  &.ready {
+    background: linear-gradient(90deg, $color-success 0%, $color-success-light 100%);
+    animation: pulse 1s ease infinite;
+  }
+}
+
+.skillEnergyText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: right;
+  margin-top: $spacing-xs;
+}

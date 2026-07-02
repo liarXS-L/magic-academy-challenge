@@ -42,7 +42,37 @@ export default function LevelsPage() {
     const foundCharacter = characters.find(ch => ch.id === characterId);
     
     if (foundCourse && foundCharacter) {
-      setCourse(foundCourse);
+      let savedProgress = '';
+      try {
+        savedProgress = Taro.getStorageSync('gameProgress');
+      } catch (e) {
+        savedProgress = localStorage.getItem('gameProgress') || '';
+      }
+      
+      const progress = savedProgress ? JSON.parse(savedProgress) : {};
+      
+      if (progress[courseId]) {
+        const updatedLevels = foundCourse.levels.map(level => {
+          const savedLevel = progress[courseId][level.id];
+          if (savedLevel) {
+            return {
+              ...level,
+              isCompleted: savedLevel.isCompleted,
+              bestGrade: savedLevel.bestGrade || level.bestGrade
+            };
+          }
+          return level;
+        });
+        
+        setCourse({
+          ...foundCourse,
+          levels: updatedLevels,
+          progress: Math.round((updatedLevels.filter(l => l.isCompleted).length / updatedLevels.length) * 100)
+        });
+      } else {
+        setCourse(foundCourse);
+      }
+      
       setCharacter(foundCharacter);
     } else {
       Taro.reLaunch({
@@ -70,6 +100,16 @@ export default function LevelsPage() {
         url: `/pages/game/index?courseId=${course.id}&characterId=${character.id}&levelId=${level.id}`
       });
     }
+  };
+
+  const handleLockedLevelClick = (level: Level, index: number) => {
+    const prevLevel = course?.levels[index - 1];
+    Taro.showModal({
+      title: '🔒 关卡未解锁',
+      content: `关卡 ${level.id}\n\n解锁条件：完成关卡 ${index}`,
+      confirmText: '知道了',
+      showCancel: false
+    });
   };
 
   const getLevelStatus = (level: Level, index: number): 'locked' | 'current' | 'completed' => {
@@ -138,7 +178,13 @@ export default function LevelsPage() {
             <View
               key={level.id}
               className={`${styles.levelCard} ${styles[status]}`}
-              onClick={() => status !== 'locked' && handleLevelSelect(level)}
+              onClick={() => {
+                if (status === 'locked') {
+                  handleLockedLevelClick(level, index);
+                } else {
+                  handleLevelSelect(level);
+                }
+              }}
             >
               <View className={styles.levelIcon}>
                 <Text className={styles.levelNumber}>{level.id}</Text>
