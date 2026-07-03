@@ -13,9 +13,9 @@ export const courses: Course[] = [
     progress: 75,
     levels: [
       { id: 1, targetScore: 5000, timeLimit: 70, isCompleted: true, bestGrade: 'S' },
-      { id: 2, targetScore: 7000, timeLimit: 65, isCompleted: true, bestGrade: 'A' },
-      { id: 3, targetScore: 10000, timeLimit: 65, isCompleted: true, bestGrade: 'B' },
-      { id: 4, targetScore: 12000, timeLimit: 60, isCompleted: false, bestGrade: null }
+      { id: 2, targetScore: 7000, timeLimit: 75, isCompleted: true, bestGrade: 'A' },
+      { id: 3, targetScore: 10000, timeLimit: 80, isCompleted: true, bestGrade: 'B' },
+      { id: 4, targetScore: 12000, timeLimit: 85, isCompleted: false, bestGrade: null }
     ]
   },
   {
@@ -30,9 +30,9 @@ export const courses: Course[] = [
     progress: 50,
     levels: [
       { id: 1, targetScore: 5000, timeLimit: 70, isCompleted: true, bestGrade: 'A' },
-      { id: 2, targetScore: 7000, timeLimit: 65, isCompleted: true, bestGrade: 'B' },
-      { id: 3, targetScore: 10000, timeLimit: 65, isCompleted: false, bestGrade: null },
-      { id: 4, targetScore: 12000, timeLimit: 60, isCompleted: false, bestGrade: null }
+      { id: 2, targetScore: 7000, timeLimit: 75, isCompleted: true, bestGrade: 'B' },
+      { id: 3, targetScore: 10000, timeLimit: 80, isCompleted: false, bestGrade: null },
+      { id: 4, targetScore: 12000, timeLimit: 85, isCompleted: false, bestGrade: null }
     ]
   },
   {
@@ -47,9 +47,9 @@ export const courses: Course[] = [
     progress: 25,
     levels: [
       { id: 1, targetScore: 5000, timeLimit: 70, isCompleted: true, bestGrade: 'B' },
-      { id: 2, targetScore: 7000, timeLimit: 65, isCompleted: false, bestGrade: null },
-      { id: 3, targetScore: 10000, timeLimit: 65, isCompleted: false, bestGrade: null },
-      { id: 4, targetScore: 12000, timeLimit: 60, isCompleted: false, bestGrade: null }
+      { id: 2, targetScore: 7000, timeLimit: 75, isCompleted: false, bestGrade: null },
+      { id: 3, targetScore: 10000, timeLimit: 80, isCompleted: false, bestGrade: null },
+      { id: 4, targetScore: 12000, timeLimit: 85, isCompleted: false, bestGrade: null }
     ]
   },
   {
@@ -64,10 +64,10 @@ export const courses: Course[] = [
     progress: 0,
     unlockCondition: '完成前三个课程的所有关卡',
     levels: [
-      { id: 1, targetScore: 8000, timeLimit: 70, isCompleted: false, bestGrade: null },
-      { id: 2, targetScore: 10000, timeLimit: 65, isCompleted: false, bestGrade: null },
-      { id: 3, targetScore: 13000, timeLimit: 65, isCompleted: false, bestGrade: null },
-      { id: 4, targetScore: 15000, timeLimit: 60, isCompleted: false, bestGrade: null }
+      { id: 1, targetScore: 8000, timeLimit: 75, isCompleted: false, bestGrade: null },
+      { id: 2, targetScore: 10000, timeLimit: 80, isCompleted: false, bestGrade: null },
+      { id: 3, targetScore: 13000, timeLimit: 85, isCompleted: false, bestGrade: null },
+      { id: 4, targetScore: 15000, timeLimit: 90, isCompleted: false, bestGrade: null }
     ]
   }
 ];
