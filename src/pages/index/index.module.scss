@@ -7,9 +7,15 @@
 }
 
 .header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: $spacing-2xl 0;
   animation: fadeIn 0.5s ease;
+
+  .headerContent {
+    flex: 1;
+  }
 }
 
 .title {
@@ -209,5 +215,30 @@
     background: $color-bg-card-light;
     color: $color-text-tertiary;
     box-shadow: none;
+  }
+}
+
+.crystals {
+  font-size: $font-size-md;
+  color: $color-warning;
+  font-weight: $font-weight-semibold;
+}
+
+.shopButton {
+  width: 100%;
+  height: $button-height-md;
+  margin-top: $spacing-md;
+  background: $color-bg-card;
+  border: 2rpx solid $color-border;
+  color: $color-text-primary;
+  font-size: $font-size-md;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+
+  &:active {
+    background: $color-bg-card-light;
   }
 }

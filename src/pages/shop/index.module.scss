@@ -1,0 +1,156 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding: $page-padding;
+  padding-bottom: calc($page-padding + env(safe-area-inset-bottom));
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  margin-bottom: $spacing-xl;
+  box-shadow: $shadow-medium;
+
+  .title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+  }
+
+  .crystals {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-warning;
+  }
+}
+
+.shopGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+}
+
+.shopCard {
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  border: 2rpx solid $color-border;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    border-color: $color-primary;
+    box-shadow: $shadow-glow;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+  background: linear-gradient(135deg, $color-bg-card-light 0%, $color-bg-card 100%);
+}
+
+.cardEmoji {
+  font-size: 80rpx;
+}
+
+.cardBody {
+  padding: $spacing-lg;
+  text-align: center;
+}
+
+.cardName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+  display: block;
+}
+
+.cardDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.cardFooter {
+  padding: $spacing-md $spacing-lg;
+  background: $color-bg-card-light;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardPrice {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.priceIcon {
+  font-size: $font-size-md;
+}
+
+.priceValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-warning;
+}
+
+.cardBtn {
+  width: 100rpx;
+  height: 60rpx;
+  padding: 0;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-fast;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.95);
+  }
+}
+
+.cardBtnDisabled {
+  background: $color-bg-card !important;
+  color: $color-text-tertiary !important;
+}
+
+.footer {
+  margin-top: $spacing-2xl;
+
+  .btnBack {
+    width: 100%;
+    height: $button-height-lg;
+    background: $color-bg-card;
+    border: 2rpx solid $color-border;
+    border-radius: $radius-button;
+    font-size: $font-size-lg;
+    color: $color-text-primary;
+    font-weight: $font-weight-semibold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:active {
+      background: $color-bg-card-light;
+    }
+  }
+}

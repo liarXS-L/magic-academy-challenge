@@ -4,9 +4,12 @@ import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { GameResult } from '@/types/game';
 import { safeParseGameResult } from '@/utils/validation';
+import { addCrystals, updateAchievements, getPlayerData, PlayerData } from '@/utils/rewardUtils';
 
 export default function ResultPage() {
   const [result, setResult] = useState<GameResult | null>(null);
+  const [crystalsEarned, setCrystalsEarned] = useState(0);
+  const [newAchievements, setNewAchievements] = useState<string[]>([]);
 
   useEffect(() => {
     let parsedResult: GameResult | null = null;
@@ -38,6 +41,27 @@ export default function ResultPage() {
     }
     
     setResult(parsedResult);
+
+    if (parsedResult.isWin) {
+      const gradeCrystalMap: Record<string, number> = {
+        S: 100,
+        A: 60,
+        B: 40,
+        C: 20,
+        D: 10
+      };
+      const earned = gradeCrystalMap[parsedResult.grade] || 10;
+      setCrystalsEarned(earned);
+      addCrystals(earned);
+
+      const completedAchievements = updateAchievements({
+        score: parsedResult.score,
+        maxCombo: parsedResult.maxCombo,
+        grade: parsedResult.grade,
+        isWin: parsedResult.isWin
+      });
+      setNewAchievements(completedAchievements);
+    }
   }, []);
 
   const handleContinue = () => {
@@ -136,13 +160,15 @@ export default function ResultPage() {
         <Text className={styles.rewardsTitle}>获得奖励</Text>
         <View className={styles.rewardsList}>
           <View className={styles.rewardItem}>
-            <Text className={styles.rewardIcon}>💰</Text>
-            <Text className={styles.rewardText}>100 学分</Text>
+            <Text className={styles.rewardIcon}>💎</Text>
+            <Text className={styles.rewardText}>魔法水晶 +{crystalsEarned}</Text>
           </View>
-          <View className={styles.rewardItem}>
-            <Text className={styles.rewardIcon}>🪄</Text>
-            <Text className={styles.rewardText}>魔法棒 x1</Text>
-          </View>
+          {newAchievements.length > 0 && newAchievements.map((name, index) => (
+            <View key={index} className={styles.rewardItem}>
+              <Text className={styles.rewardIcon}>🏆</Text>
+              <Text className={styles.rewardText}>成就: {name}</Text>
+            </View>
+          ))}
         </View>
       </View>
 

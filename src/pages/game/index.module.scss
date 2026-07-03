@@ -285,3 +285,64 @@
   text-align: right;
   margin-top: $spacing-xs;
 }
+
+.itemPanel {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-medium;
+  margin-bottom: $spacing-lg;
+}
+
+.itemTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.itemGrid {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.itemButton {
+  width: 100rpx;
+  height: 100rpx;
+  background: $color-bg-card-light;
+  border-radius: $radius-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  transition: all $transition-fast;
+  position: relative;
+
+  &:active {
+    transform: scale(0.95);
+    background: lighten($color-bg-card-light, 5%);
+  }
+
+  &.itemCooldown {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.itemEmoji {
+  font-size: $font-size-lg;
+}
+
+.itemCount {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.itemEmpty {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  flex: 1;
+  text-align: center;
+}

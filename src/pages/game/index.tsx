@@ -22,6 +22,9 @@ import {
 } from '@/utils/gameLogic';
 import { GameElement as GameElementType, Course, Character, GameResult } from '@/types/game';
 import { validateCourseId, validateCharacterId, validateLevelId } from '@/utils/validation';
+import { ItemType } from '@/types/reward';
+import { useItem, getPlayerData, addItem, getDropProbability, getRandomItemType } from '@/utils/rewardUtils';
+import { itemEmojis } from '@/data/achievementData';
 
 interface GameParams {
   courseId: string;
@@ -50,6 +53,10 @@ export default function GamePage() {
   const [energy, setEnergy] = useState(0);
   const [isSkillActive, setIsSkillActive] = useState(false);
   const [skillActiveCount, setSkillActiveCount] = useState(0);
+  
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [scoreMultiplier, setScoreMultiplier] = useState(1);
+  const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
   
   const timerRef = useRef<number | null>(null);
   const countdownRef = useRef<number | null>(null);
@@ -114,6 +121,9 @@ export default function GamePage() {
       setTimeLeft(level.timeLimit);
       
       setBoard(initializeBoard(foundCourse.elementTypes));
+      
+      const playerData = getPlayerData();
+      setInventory(playerData.inventory || []);
     } else {
       const defaultCourse = courses[0];
       const defaultCharacter = characters[0];
@@ -138,6 +148,63 @@ export default function GamePage() {
       energy
     };
   }, [score, targetScore, timeLeft, maxCombo, course, character, levelId, energy]);
+
+  const useItemFromInventory = (itemType: ItemType) => {
+    if (cooldowns[itemType] && Date.now() < cooldowns[itemType]) {
+      Taro.showToast({
+        title: '道具冷却中',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const itemIndex = inventory.findIndex(item => item.type === itemType && item.count > 0);
+    if (itemIndex === -1) {
+      Taro.showToast({
+        title: '道具不足',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const result = useItem(itemType);
+    
+    if (result.timeBonus > 0) {
+      setTimeLeft(prev => prev + result.timeBonus);
+      Taro.showToast({
+        title: `+${result.timeBonus}秒`,
+        icon: 'none'
+      });
+    }
+    
+    if (result.scoreBonus > 0) {
+      setScore(prev => prev + result.scoreBonus);
+      Taro.showToast({
+        title: `+${result.scoreBonus}分`,
+        icon: 'none'
+      });
+    }
+    
+    if (result.scoreMultiplier > 1) {
+      setScoreMultiplier(result.scoreMultiplier);
+      Taro.showToast({
+        title: `得分${result.scoreMultiplier}倍`,
+        icon: 'none'
+      });
+      setTimeout(() => {
+        setScoreMultiplier(1);
+      }, 10000);
+    }
+
+    const newInventory = [...inventory];
+    newInventory[itemIndex].count -= 1;
+    setInventory(newInventory);
+    
+    setCooldowns(prev => ({
+      ...prev,
+      [itemType]: Date.now() + 30000
+    }));
+  };
 
   const handleBack = () => {
     Taro.showModal({
@@ -414,9 +481,31 @@ export default function GamePage() {
       setSkillActiveCount(prev => prev - 1);
     }
     
-    const totalScore = Math.floor(baseScore * comboMultiplier * elementBonus * skillMultiplier);
+    const totalScore = Math.floor(baseScore * comboMultiplier * elementBonus * skillMultiplier * scoreMultiplier);
 
     setScore(prev => prev + totalScore);
+
+    if (allMatches.length >= 3) {
+      const dropProb = getDropProbability(allMatches.length);
+      if (Math.random() < dropProb) {
+        const itemType = getRandomItemType();
+        addItem(itemType, 1);
+        setInventory(prev => {
+          const existing = prev.find(item => item.type === itemType);
+          if (existing) {
+            return prev.map(item => 
+              item.type === itemType ? { ...item, count: item.count + 1 } : item
+            );
+          }
+          return [...prev, { type: itemType, count: 1 }];
+        });
+        Taro.showToast({
+          title: `${itemEmojis[itemType]} 获得道具`,
+          icon: 'none',
+          duration: 1500
+        });
+      }
+    }
 
     const energyGain = allMatches.length * 2;
     setEnergy(prev => {
@@ -541,6 +630,25 @@ export default function GamePage() {
           />
         </View>
         <Text className={styles.scoreTarget}>目标: {targetScore.toLocaleString()}</Text>
+      </View>
+
+      <View className={styles.itemPanel}>
+        <Text className={styles.itemTitle}>道具栏</Text>
+        <View className={styles.itemGrid}>
+          {inventory.map((item, index) => (
+            <View
+              key={`${item.type}-${index}`}
+              className={`${styles.itemButton} ${cooldowns[item.type] && Date.now() < cooldowns[item.type] ? styles.itemCooldown : ''}`}
+              onClick={() => useItemFromInventory(item.type)}
+            >
+              <Text className={styles.itemEmoji}>{itemEmojis[item.type]}</Text>
+              <Text className={styles.itemCount}>{item.count}</Text>
+            </View>
+          ))}
+          {inventory.length === 0 && (
+            <Text className={styles.itemEmpty}>暂无道具</Text>
+          )}
+        </View>
       </View>
 
       <View className={styles.skillPanel}>

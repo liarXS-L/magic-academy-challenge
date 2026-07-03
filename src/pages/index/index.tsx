@@ -4,10 +4,13 @@ import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { courses, characters } from '@/data/gameData';
 import { Course, Character } from '@/types/game';
+import { PlayerData } from '@/types/reward';
+import { getPlayerData } from '@/utils/rewardUtils';
 
 export default function IndexPage() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+  const [playerData] = useState<PlayerData>(getPlayerData());
 
   const handleCourseClick = (course: Course) => {
     if (course.isLocked) {
@@ -62,8 +65,13 @@ export default function IndexPage() {
   return (
     <View className={styles.page}>
       <View className={styles.header}>
-        <Text className={styles.title}>魔法学院大挑战</Text>
-        <Text className={styles.subtitle}>开启你的魔法之旅</Text>
+        <View className={styles.headerContent}>
+          <Text className={styles.title}>魔法学院大挑战</Text>
+          <Text className={styles.subtitle}>开启你的魔法之旅</Text>
+        </View>
+        <View className={styles.crystals}>
+          <Text>💎 {playerData.crystals}</Text>
+        </View>
       </View>
 
       <View className={styles.section}>
@@ -128,6 +136,12 @@ export default function IndexPage() {
           disabled={!canStart}
         >
           ▶ 开始游戏
+        </Button>
+        <Button
+          className={styles.shopButton}
+          onClick={() => Taro.navigateTo({ url: '/pages/shop/index' })}
+        >
+          🛒 魔法商店
         </Button>
       </View>
     </View>
