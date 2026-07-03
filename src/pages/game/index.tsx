@@ -18,6 +18,7 @@ import {
   classifyMatches,
   createSpecialElements,
   triggerSpecialEffects,
+  triggerSpecialCombo,
   activateSkill
 } from '@/utils/gameLogic';
 import { GameElement as GameElementType, Course, Character, GameResult } from '@/types/game';
@@ -434,11 +435,20 @@ export default function GamePage() {
   }, []);
 
   const processMatches = useCallback(async (currentBoard: GameElementType[][], currentCombo: number) => {
+    const preMarkedMatches: { row: number; col: number }[] = [];
+    for (let r = 0; r < currentBoard.length; r++) {
+      for (let c = 0; c < currentBoard[r].length; c++) {
+        if (currentBoard[r][c].isMatched) {
+          preMarkedMatches.push({ row: r, col: c });
+        }
+      }
+    }
+
     const classification = classifyMatches(currentBoard);
     let allMatches = [...classification.normalMatches];
 
     const specialEffects = triggerSpecialEffects(currentBoard, classification.normalMatches);
-    allMatches = [...new Set([...allMatches, ...specialEffects])];
+    allMatches = [...new Set([...allMatches, ...specialEffects, ...preMarkedMatches])];
 
     if (allMatches.length === 0) {
       setCombo(0);
@@ -556,6 +566,41 @@ export default function GamePage() {
     }
 
     if (course) {
+      const element1 = board[prevRow][prevCol];
+      const element2 = board[row][col];
+      const hasSpecial1 = element1.special !== null;
+      const hasSpecial2 = element2.special !== null;
+
+      if (hasSpecial1 && hasSpecial2) {
+        const comboResult = triggerSpecialCombo(board, prevRow, prevCol, row, col);
+        
+        if (comboResult.isCombo) {
+          isProcessingRef.current = true;
+          
+          const newBoard = board.map(r => r.map(el => ({ ...el, isSelected: false })));
+          comboResult.affectedCells.forEach(cell => {
+            newBoard[cell.row][cell.col].isMatched = true;
+          });
+          
+          if (comboResult.transformCells) {
+            comboResult.transformCells.forEach(cell => {
+              if (!newBoard[cell.row][cell.col].isMatched) {
+                newBoard[cell.row][cell.col].special = cell.newSpecial;
+              }
+            });
+          }
+          
+          setBoard(newBoard);
+          setSelectedElement(null);
+          
+          setTimeout(() => {
+            processMatches(newBoard, 0);
+          }, 200);
+          
+          return;
+        }
+      }
+
       if (!isValidMove(board, prevRow, prevCol, row, col)) {
         const newBoard = board.map(r => r.map(el => ({ ...el, isSelected: false })));
         newBoard[row][col].isSelected = true;

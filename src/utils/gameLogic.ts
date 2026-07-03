@@ -280,6 +280,282 @@ export function getRainbowArea(board: GameElement[][], targetType: ElementType):
   return area;
 }
 
+export function getCrossStormArea(row: number, col: number): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  for (let c = 0; c < BOARD_SIZE; c++) {
+    area.push({ row, col: c });
+  }
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    if (r !== row) {
+      area.push({ row: r, col });
+    }
+  }
+  
+  return area;
+}
+
+export function getShockwaveArea(centerRow: number, centerCol: number, direction: 'h' | 'v'): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  const radius = 2;
+  
+  for (let dr = -radius; dr <= radius; dr++) {
+    for (let dc = -radius; dc <= radius; dc++) {
+      const r = centerRow + dr;
+      const c = centerCol + dc;
+      if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+        const distance = direction === 'h' ? Math.abs(dr) : Math.abs(dc);
+        if (distance <= 2 && Math.abs(direction === 'h' ? dc : dr) <= 2) {
+          area.push({ row: r, col: c });
+        }
+      }
+    }
+  }
+  
+  return area;
+}
+
+export function getSupernovaArea(centerRow: number, centerCol: number): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  const radius = 2;
+  
+  for (let dr = -radius; dr <= radius; dr++) {
+    for (let dc = -radius; dc <= radius; dc++) {
+      const r = centerRow + dr;
+      const c = centerCol + dc;
+      if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+        area.push({ row: r, col: c });
+      }
+    }
+  }
+  
+  return area;
+}
+
+export function getRainbowBeamArea(board: GameElement[][], row: number, col: number, direction: 'h' | 'v'): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  if (direction === 'h') {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      area.push({ row, col: c });
+    }
+  } else {
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      area.push({ row: r, col });
+    }
+  }
+  
+  return area;
+}
+
+export function getDimensionalRiftArea(board: GameElement[][], centerRow: number, centerCol: number): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      const r = centerRow + dr;
+      const c = centerCol + dc;
+      if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+        area.push({ row: r, col: c });
+      }
+    }
+  }
+  
+  const typeCounts: Record<string, number> = {};
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const type = board[r][c].type;
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    }
+  }
+  
+  let mostCommonType: ElementType | null = null;
+  let maxCount = 0;
+  Object.entries(typeCounts).forEach(([type, count]) => {
+    if (count > maxCount) {
+      maxCount = count;
+      mostCommonType = type as ElementType;
+    }
+  });
+  
+  if (mostCommonType) {
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (board[r][c].type === mostCommonType) {
+          area.push({ row: r, col: c });
+        }
+      }
+    }
+  }
+  
+  return area;
+}
+
+export function getChaosStormArea(): { row: number; col: number }[] {
+  const area: { row: number; col: number }[] = [];
+  
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      area.push({ row, col });
+    }
+  }
+  
+  return area;
+}
+
+export interface SpecialComboResult {
+  affectedCells: { row: number; col: number }[];
+  transformCells?: { row: number; col: number; newSpecial: SpecialType }[];
+  isCombo: boolean;
+}
+
+export function triggerSpecialCombo(
+  board: GameElement[][],
+  row1: number,
+  col1: number,
+  row2: number,
+  col2: number
+): SpecialComboResult {
+  const element1 = board[row1][col1];
+  const element2 = board[row2][col2];
+  const special1 = element1.special;
+  const special2 = element2.special;
+  
+  const affectedCells = new Set<string>();
+  const transformCells: { row: number; col: number; newSpecial: SpecialType }[] = [];
+  
+  const addCells = (cells: { row: number; col: number }[]) => {
+    cells.forEach(cell => affectedCells.add(`${cell.row}-${cell.col}`));
+  };
+  
+  if (special1 && special2) {
+    if ((special1 === 'stripe-h' && special2 === 'stripe-v') ||
+        (special1 === 'stripe-v' && special2 === 'stripe-h')) {
+      const crossArea = getCrossStormArea(row1, col1);
+      addCells(crossArea);
+      return { affectedCells: Array.from(affectedCells).map(k => {
+        const [r, c] = k.split('-').map(Number);
+        return { row: r, col: c };
+      }), isCombo: true };
+    }
+    
+    if ((special1 === 'bomb' && special2 === 'stripe-h') ||
+        (special1 === 'stripe-h' && special2 === 'bomb')) {
+      const shockwaveArea = getShockwaveArea(row1, col1, 'h');
+      addCells(shockwaveArea);
+      return { affectedCells: Array.from(affectedCells).map(k => {
+        const [r, c] = k.split('-').map(Number);
+        return { row: r, col: c };
+      }), isCombo: true };
+    }
+    
+    if ((special1 === 'bomb' && special2 === 'stripe-v') ||
+        (special1 === 'stripe-v' && special2 === 'bomb')) {
+      const shockwaveArea = getShockwaveArea(row1, col1, 'v');
+      addCells(shockwaveArea);
+      return { affectedCells: Array.from(affectedCells).map(k => {
+        const [r, c] = k.split('-').map(Number);
+        return { row: r, col: c };
+      }), isCombo: true };
+    }
+    
+    if (special1 === 'bomb' && special2 === 'bomb') {
+      const supernovaArea = getSupernovaArea(row1, col1);
+      addCells(supernovaArea);
+      
+      const nearbyPositions = [
+        { row: row1 - 2, col: col1 },
+        { row: row1 + 2, col: col1 },
+        { row: row1, col: col1 - 2 },
+        { row: row1, col: col1 + 2 }
+      ];
+      
+      nearbyPositions.forEach(pos => {
+        if (pos.row >= 0 && pos.row < BOARD_SIZE && 
+            pos.col >= 0 && pos.col < BOARD_SIZE) {
+          transformCells.push({ row: pos.row, col: pos.col, newSpecial: 'bomb' });
+        }
+      });
+      
+      return { 
+        affectedCells: Array.from(affectedCells).map(k => {
+          const [r, c] = k.split('-').map(Number);
+          return { row: r, col: c };
+        }), 
+        transformCells,
+        isCombo: true 
+      };
+    }
+    
+    if ((special1 === 'rainbow' && special2 === 'stripe-h') ||
+        (special1 === 'stripe-h' && special2 === 'rainbow')) {
+      const beamArea = getRainbowBeamArea(board, row1, col1, 'h');
+      addCells(beamArea);
+      
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (!affectedCells.has(`${row1}-${c}`)) {
+          const specials: SpecialType[] = ['stripe-h', 'stripe-v', 'bomb'];
+          const randomSpecial = specials[Math.floor(Math.random() * specials.length)];
+          transformCells.push({ row: row1, col: c, newSpecial: randomSpecial });
+        }
+      }
+      
+      return { 
+        affectedCells: Array.from(affectedCells).map(k => {
+          const [r, c] = k.split('-').map(Number);
+          return { row: r, col: c };
+        }), 
+        transformCells,
+        isCombo: true 
+      };
+    }
+    
+    if ((special1 === 'rainbow' && special2 === 'stripe-v') ||
+        (special1 === 'stripe-v' && special2 === 'rainbow')) {
+      const beamArea = getRainbowBeamArea(board, row1, col1, 'v');
+      addCells(beamArea);
+      
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        if (!affectedCells.has(`${r}-${col1}`)) {
+          const specials: SpecialType[] = ['stripe-h', 'stripe-v', 'bomb'];
+          const randomSpecial = specials[Math.floor(Math.random() * specials.length)];
+          transformCells.push({ row: r, col: col1, newSpecial: randomSpecial });
+        }
+      }
+      
+      return { 
+        affectedCells: Array.from(affectedCells).map(k => {
+          const [r, c] = k.split('-').map(Number);
+          return { row: r, col: c };
+        }), 
+        transformCells,
+        isCombo: true 
+      };
+    }
+    
+    if ((special1 === 'rainbow' && special2 === 'bomb') ||
+        (special1 === 'bomb' && special2 === 'rainbow')) {
+      const riftArea = getDimensionalRiftArea(board, row1, col1);
+      addCells(riftArea);
+      return { affectedCells: Array.from(affectedCells).map(k => {
+        const [r, c] = k.split('-').map(Number);
+        return { row: r, col: c };
+      }), isCombo: true };
+    }
+    
+    if (special1 === 'rainbow' && special2 === 'rainbow') {
+      const chaosArea = getChaosStormArea();
+      addCells(chaosArea);
+      return { affectedCells: Array.from(affectedCells).map(k => {
+        const [r, c] = k.split('-').map(Number);
+        return { row: r, col: c };
+      }), isCombo: true };
+    }
+  }
+  
+  return { affectedCells: [], isCombo: false };
+}
+
 export function triggerSpecialEffects(
   board: GameElement[][],
   matches: { row: number; col: number }[]
